@@ -63,8 +63,13 @@ public class RolesInColumnWhitelistMissingCachetypeAnalyzer : PXDiagnosticAnalyz
 	/// Group 1: Member or Cache (to distinguish which table).
 	/// Group 2: the column list text inside the parentheses.
 	/// </summary>
+	// Codex P2: accept SQL Server's common identifier forms:
+	//   bare:              INSERT INTO RolesInMember (...)
+	//   bracketed:         INSERT INTO [RolesInMember] (...)
+	//   double-quoted:     INSERT INTO "RolesInMember" (...)
+	//   schema-qualified:  INSERT INTO dbo.RolesInMember (...) | [dbo].[RolesInMember]
 	private static readonly Regex InsertRolesInPattern = new(
-		@"\bINSERT\s+INTO\s+RolesIn(Member|Cache)\b\s*\(([^)]+)\)",
+		@"\bINSERT\s+INTO\s+(?:[\[""]?\w+[\]""]?\s*\.\s*)?[\[""]?RolesIn(Member|Cache)[\]""]?\s*\(([^)]+)\)",
 		RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
 	/// <summary>
@@ -106,12 +111,16 @@ public class RolesInColumnWhitelistMissingCachetypeAnalyzer : PXDiagnosticAnalyz
 		if (sqlText is null)
 			return;
 
-		if (!ContainsInsertWithMissingCachetype(sqlText))
-			return;
-
-		syntaxContext.ReportDiagnosticWithSuppressionCheck(
-			Diagnostic.Create(Descriptors.PX1123_RolesInColumnWhitelistMissingCachetype, invocation.GetLocation()),
-			pxContext.CodeAnalysisSettings);
+		// Codex P3: report every offending INSERT in the SQL batch, not just the first.
+		// If one Execute call has both a bad RolesInMember INSERT and a bad RolesInCache
+		// INSERT, emit two diagnostics so the second isn't masked by fixing the first.
+		int missingCount = CountInsertsWithMissingCachetype(sqlText);
+		for (int i = 0; i < missingCount; i++)
+		{
+			syntaxContext.ReportDiagnosticWithSuppressionCheck(
+				Diagnostic.Create(Descriptors.PX1123_RolesInColumnWhitelistMissingCachetype, invocation.GetLocation()),
+				pxContext.CodeAnalysisSettings);
+		}
 	}
 
 	private static bool IsPxDatabaseExecuteCall(
@@ -136,12 +145,14 @@ public class RolesInColumnWhitelistMissingCachetypeAnalyzer : PXDiagnosticAnalyz
 
 	/// <summary>
 	/// Scans the sanitized SQL for every INSERT INTO RolesInMember/RolesInCache
-	/// with an explicit column list.  Returns <c>true</c> if any such INSERT
-	/// omits <c>Cachetype</c> from that list.
+	/// with an explicit column list. Returns the count of INSERTs that omit
+	/// <c>Cachetype</c>. Codex P3: caller reports one diagnostic per offending
+	/// INSERT so multiple violations in the same SQL aren't masked.
 	/// </summary>
-	private static bool ContainsInsertWithMissingCachetype(string sql)
+	private static int CountInsertsWithMissingCachetype(string sql)
 	{
 		string sanitized = StripCommentsAndStringLiterals(sql);
+		int missing = 0;
 
 		foreach (Match m in InsertRolesInPattern.Matches(sanitized))
 		{
@@ -149,10 +160,10 @@ public class RolesInColumnWhitelistMissingCachetypeAnalyzer : PXDiagnosticAnalyz
 			string columnList = m.Groups[2].Value;
 
 			if (!ColumnListContainsCachetype(columnList))
-				return true;
+				missing++;
 		}
 
-		return false;
+		return missing;
 	}
 
 	/// <summary>
