@@ -308,10 +308,15 @@ public class MissingRoleGrantFallbackAnalyzer : PXDiagnosticAnalyzer
 
 	/// <summary>
 	/// Strips SQL comments (<c>--</c> line and <c>/* */</c> block) but PRESERVES
-	/// string literals (<c>'...'</c>) so that SQL value markers like <c>Rolename='*'</c>
-	/// remain detectable in the sanitized text. Codex P2 caught the case where
-	/// full sanitization stripped the <c>'*'</c> and silently null-opped the
-	/// fallback check.
+	/// string literals (<c>'...'</c> with <c>''</c> escape) — including any
+	/// comment-marker-looking text inside literals. Used for the
+	/// <c>Rolename='*'</c> detection where the SQL string value must survive
+	/// stripping but real comments must not.
+	///
+	/// Codex P2 (iteration 4): without skipping over string literals, a
+	/// <c>--</c> inside a preserved literal was treated as a real comment
+	/// start, blanking out the rest of that line (including a legitimate
+	/// <c>Rolename='*'</c> after it) → false-positive PX1122.
 	/// </summary>
 	private static string StripRgfCommentsOnly(string sql)
 	{
@@ -321,7 +326,8 @@ public class MissingRoleGrantFallbackAnalyzer : PXDiagnosticAnalyzer
 		{
 			char c = sql[i];
 
-			// -- line comment
+			// -- line comment (only when NOT inside a string literal; that case
+			// is handled by the literal-copy block below)
 			if (c == '-' && i + 1 < sql.Length && sql[i + 1] == '-')
 			{
 				while (i < sql.Length && sql[i] != '\n')
@@ -350,7 +356,34 @@ public class MissingRoleGrantFallbackAnalyzer : PXDiagnosticAnalyzer
 				continue;
 			}
 
-			// Preserve everything else, including string literals.
+			// SQL string literal — COPY THROUGH preserving it (including escaped
+			// '' inside the literal). Comment markers inside the literal are
+			// literal characters, not comments.
+			if (c == '\'')
+			{
+				sb.Append(c);
+				i++;
+				while (i < sql.Length)
+				{
+					if (sql[i] == '\'')
+					{
+						if (i + 1 < sql.Length && sql[i + 1] == '\'')
+						{
+							sb.Append("''");
+							i += 2;
+							continue;
+						}
+						sb.Append('\'');
+						i++;
+						break;
+					}
+					sb.Append(sql[i]);
+					i++;
+				}
+				continue;
+			}
+
+			// Default: preserve character.
 			sb.Append(c);
 			i++;
 		}
