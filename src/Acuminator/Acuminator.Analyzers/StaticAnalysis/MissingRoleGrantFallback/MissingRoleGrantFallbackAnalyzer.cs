@@ -143,15 +143,22 @@ public class MissingRoleGrantFallbackAnalyzer : PXDiagnosticAnalyzer
 			if (candidateText is null)
 				continue;
 
-			// COUNT( guard runs on sanitized text so commented-out COUNT(* doesn't false-positive.
+			// COUNT( guard runs on fully-sanitized text so commented-out COUNT(* and
+			// COUNT inside another SQL string literal don't false-positive.
 			string candidateSanitized = StripRgfCommentsAndStringLiterals(candidateText);
 			if (!hasCountCheck && CountCheckPattern.IsMatch(candidateSanitized))
 				hasCountCheck = true;
 
-			// Rolename='*' fallback contains a SQL string literal — sanitizer strips it.
-			// Match against the RAW candidateText so the '*' is still present.
-			if (!hasRolenameStar && RolenameStarPattern.IsMatch(candidateText))
-				hasRolenameStar = true;
+			// Rolename='*' fallback contains a SQL string literal ('*') that the full
+			// sanitizer strips, so we need a comments-only sanitization that preserves
+			// SQL string literals. Strip comments to avoid false-suppression from
+			// "-- TODO: add Rolename='*' fallback" comments, but keep '*' literals intact.
+			if (!hasRolenameStar)
+			{
+				string candidateCommentsStripped = StripRgfCommentsOnly(candidateText);
+				if (RolenameStarPattern.IsMatch(candidateCommentsStripped))
+					hasRolenameStar = true;
+			}
 
 			if (hasCountCheck && hasRolenameStar)
 				break;
@@ -293,6 +300,57 @@ public class MissingRoleGrantFallbackAnalyzer : PXDiagnosticAnalyzer
 				continue;
 			}
 
+			sb.Append(c);
+			i++;
+		}
+		return sb.ToString();
+	}
+
+	/// <summary>
+	/// Strips SQL comments (<c>--</c> line and <c>/* */</c> block) but PRESERVES
+	/// string literals (<c>'...'</c>) so that SQL value markers like <c>Rolename='*'</c>
+	/// remain detectable in the sanitized text. Codex P2 caught the case where
+	/// full sanitization stripped the <c>'*'</c> and silently null-opped the
+	/// fallback check.
+	/// </summary>
+	private static string StripRgfCommentsOnly(string sql)
+	{
+		var sb = new StringBuilder(sql.Length);
+		int i = 0;
+		while (i < sql.Length)
+		{
+			char c = sql[i];
+
+			// -- line comment
+			if (c == '-' && i + 1 < sql.Length && sql[i + 1] == '-')
+			{
+				while (i < sql.Length && sql[i] != '\n')
+				{
+					sb.Append(' ');
+					i++;
+				}
+				continue;
+			}
+
+			// /* block comment */
+			if (c == '/' && i + 1 < sql.Length && sql[i + 1] == '*')
+			{
+				sb.Append("  ");
+				i += 2;
+				while (i + 1 < sql.Length && !(sql[i] == '*' && sql[i + 1] == '/'))
+				{
+					sb.Append(sql[i] == '\n' ? '\n' : ' ');
+					i++;
+				}
+				if (i + 1 < sql.Length)
+				{
+					sb.Append("  ");
+					i += 2;
+				}
+				continue;
+			}
+
+			// Preserve everything else, including string literals.
 			sb.Append(c);
 			i++;
 		}
