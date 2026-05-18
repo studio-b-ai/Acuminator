@@ -941,4 +941,7 @@ Reason: {2}</value>
   <data name="PX1122Title" xml:space="preserve">
     <value>The PXDatabase.Execute call uses an INSERT INTO RolesIn[Graph|Member|Cache] SELECT ... FROM RolesIn... pattern that silently null-ops when the source ScreenID has zero rows. Add a pre-COUNT check on the source plus a Rolename='*' fallback so role grants land even when the source template is empty.</value>
   </data>
+  <data name="PX1123Title" xml:space="preserve">
+    <value>The PXDatabase.Execute call performs an INSERT INTO RolesInMember or RolesInCache with an explicit column list that omits the Cachetype column. Cachetype is NOT NULL on those tables; INSERT will crash at runtime with 'Cannot insert NULL into column Cachetype'. Add Cachetype to the column list or use INFORMATION_SCHEMA.COLUMNS for dynamic discovery.</value>
+  </data>
 </root>

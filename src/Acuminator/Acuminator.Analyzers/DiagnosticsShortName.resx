@@ -501,4 +501,7 @@
   <data name="PX1122" xml:space="preserve">
     <value>MissingRoleGrantFallback</value>
   </data>
+  <data name="PX1123" xml:space="preserve">
+    <value>RolesInColumnWhitelistMissingCachetype</value>
+  </data>
 </root>

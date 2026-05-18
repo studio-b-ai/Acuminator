@@ -590,5 +590,9 @@ namespace Acuminator.Analyzers.StaticAnalysis
 		public static DiagnosticDescriptor PX1122_MissingRoleGrantFallback { get; } =
 			Rule("PX1122", nameof(Resources.PX1122Title).GetLocalized(), Category.Acuminator, DiagnosticSeverity.Warning,
 				DiagnosticsShortName.PX1122);
+
+		public static DiagnosticDescriptor PX1123_RolesInColumnWhitelistMissingCachetype { get; } =
+			Rule("PX1123", nameof(Resources.PX1123Title).GetLocalized(), Category.Acuminator, DiagnosticSeverity.Warning,
+				DiagnosticsShortName.PX1123);
 	}
 }

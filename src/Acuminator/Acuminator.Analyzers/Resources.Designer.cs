@@ -2475,6 +2475,15 @@ namespace Acuminator.Analyzers {
         }
 
         /// <summary>
+        ///   Looks up a localized string similar to The PXDatabase.Execute call performs an INSERT INTO RolesInMember or RolesInCache with an explicit column list that omits the Cachetype column. Cachetype is NOT NULL on those tables; INSERT will crash at runtime with 'Cannot insert NULL into column Cachetype'. Add Cachetype to the column list or use INFORMATION_SCHEMA.COLUMNS for dynamic discovery.
+        /// </summary>
+        public static string PX1123Title {
+            get {
+                return ResourceManager.GetString("PX1123Title", resourceCulture);
+            }
+        }
+
+        /// <summary>
         ///   Looks up a localized string similar to Suppress the {0} diagnostic with Acuminator.
         /// </summary>
         public static string SuppressDiagnosticGroupCodeActionTitle {

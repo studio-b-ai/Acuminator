@@ -1211,5 +1211,14 @@ namespace Acuminator.Analyzers {
                 return ResourceManager.GetString("PX1122", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to RolesInColumnWhitelistMissingCachetype.
+        /// </summary>
+        public static string PX1123 {
+            get {
+                return ResourceManager.GetString("PX1123", resourceCulture);
+            }
+        }
     }
 }
