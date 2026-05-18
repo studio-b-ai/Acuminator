@@ -1202,5 +1202,14 @@ namespace Acuminator.Analyzers {
                 return ResourceManager.GetString("PX1121", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to MissingRoleGrantFallback.
+        /// </summary>
+        public static string PX1122 {
+            get {
+                return ResourceManager.GetString("PX1122", resourceCulture);
+            }
+        }
     }
 }

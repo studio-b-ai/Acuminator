@@ -2455,7 +2455,25 @@ namespace Acuminator.Analyzers {
                 return ResourceManager.GetString("PX1120Title_StoreTaskInVariable", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to The PXDatabase.Execute call performs an unguarded schema mutation (ALTER TABLE ADD, CREATE TABLE, or CREATE INDEX). Acumatica customization plugins re-run UpdateDatabase on every publish; wrap the mutation in an existence guard..
+        /// </summary>
+        public static string PX1121Title {
+            get {
+                return ResourceManager.GetString("PX1121Title", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The PXDatabase.Execute call uses an INSERT INTO RolesIn[Graph|Member|Cache] SELECT ... FROM RolesIn... pattern that silently null-ops when the source ScreenID has zero rows. Add a pre-COUNT check on the source plus a Rolename='*' fallback..
+        /// </summary>
+        public static string PX1122Title {
+            get {
+                return ResourceManager.GetString("PX1122Title", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Suppress the {0} diagnostic with Acuminator.
         /// </summary>
@@ -2492,13 +2510,5 @@ namespace Acuminator.Analyzers {
             }
         }
 
-        /// <summary>
-        ///   Looks up a localized string similar to The PXDatabase.Execute call performs an unguarded schema mutation.
-        /// </summary>
-        public static string PX1121Title {
-            get {
-                return ResourceManager.GetString("PX1121Title", resourceCulture);
-            }
-        }
     }
 }

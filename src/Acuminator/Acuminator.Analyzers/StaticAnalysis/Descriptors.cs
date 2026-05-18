@@ -586,5 +586,9 @@ namespace Acuminator.Analyzers.StaticAnalysis
 		public static DiagnosticDescriptor PX1121_MissingSchemaMutationGuard { get; } =
 			Rule("PX1121", nameof(Resources.PX1121Title).GetLocalized(), Category.Acuminator, DiagnosticSeverity.Warning,
 				DiagnosticsShortName.PX1121);
+
+		public static DiagnosticDescriptor PX1122_MissingRoleGrantFallback { get; } =
+			Rule("PX1122", nameof(Resources.PX1122Title).GetLocalized(), Category.Acuminator, DiagnosticSeverity.Warning,
+				DiagnosticsShortName.PX1122);
 	}
 }

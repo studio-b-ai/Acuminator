@@ -938,4 +938,7 @@ Reason: {2}</value>
   <data name="PX1121Title" xml:space="preserve">
     <value>The PXDatabase.Execute call performs an unguarded schema mutation (ALTER TABLE ADD, CREATE TABLE, or CREATE INDEX). Acumatica customization plugins re-run UpdateDatabase on every publish; wrap the mutation in an existence guard (IF NOT EXISTS, IF COL_LENGTH, IF OBJECT_ID) so subsequent publishes do not fail.</value>
   </data>
+  <data name="PX1122Title" xml:space="preserve">
+    <value>The PXDatabase.Execute call uses an INSERT INTO RolesIn[Graph|Member|Cache] SELECT ... FROM RolesIn... pattern that silently null-ops when the source ScreenID has zero rows. Add a pre-COUNT check on the source plus a Rolename='*' fallback so role grants land even when the source template is empty.</value>
+  </data>
 </root>
