@@ -63,10 +63,10 @@ public class MissingRoleGrantFallbackAnalyzer : PXDiagnosticAnalyzer
 
 	/// <summary>
 	/// Matches a pre-COUNT check on a RolesIn* source table.
-	/// Accepts COUNT( or COUNT_BIG( anywhere in the SQL (case-insensitive).
+	/// Accepts plain COUNT( as well as COUNT_BIG( (case-insensitive).
 	/// </summary>
 	private static readonly Regex CountCheckPattern = new(
-		@"\bCOUNT_?BIG?\s*\(",
+		@"\bCOUNT(_BIG)?\s*\(",
 		RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
 	/// <summary>
@@ -143,12 +143,14 @@ public class MissingRoleGrantFallbackAnalyzer : PXDiagnosticAnalyzer
 			if (candidateText is null)
 				continue;
 
+			// COUNT( guard runs on sanitized text so commented-out COUNT(* doesn't false-positive.
 			string candidateSanitized = StripRgfCommentsAndStringLiterals(candidateText);
-
 			if (!hasCountCheck && CountCheckPattern.IsMatch(candidateSanitized))
 				hasCountCheck = true;
 
-			if (!hasRolenameStar && RolenameStarPattern.IsMatch(candidateSanitized))
+			// Rolename='*' fallback contains a SQL string literal — sanitizer strips it.
+			// Match against the RAW candidateText so the '*' is still present.
+			if (!hasRolenameStar && RolenameStarPattern.IsMatch(candidateText))
 				hasRolenameStar = true;
 
 			if (hasCountCheck && hasRolenameStar)
